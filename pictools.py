@@ -44,6 +44,7 @@ def separate(context, dir, by, out):
 def process(context, dir, max_length, quality, force, zip, prefix, suffix, out):
     verbose = context.obj.get('verbose')
     for d in dir:
+        print(f'Processing {d}')
         images = find_images(d, recursive=True)
         processed = process_images(images,
                                    quality=quality,
