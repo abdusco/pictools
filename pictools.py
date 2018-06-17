@@ -39,9 +39,8 @@ def separate(context, dir, by, out):
 @click.option('--force', is_flag=True, help='Force reprocess all files')
 @click.option('--prefix', default='r__', help='Add prefix to processed images')
 @click.option('--suffix', default='', help='Add suffix to processed images')
-@click.option('--out', default='./')
 @click.pass_context
-def process(context, dir, max_length, quality, force, zip, prefix, suffix, out):
+def process(context, dir, max_length, quality, force, zip, prefix, suffix):
     verbose = context.obj.get('verbose')
     for d in dir:
         print(f'Processing {d}')
