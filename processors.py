@@ -17,11 +17,11 @@ def resize_image(file, save_path, max_length=0, width=0, height=0, quality=80):
 
         if is_larger_than_max:
             if is_portrait:
-                width = max_length
-                height = width / w * h
-            else:
                 height = max_length
                 width = height / h * w
+            else:
+                width = max_length
+                height = width / w * h
         elif resize_by_width:
             height = width * h / w
         elif resize_by_height:
