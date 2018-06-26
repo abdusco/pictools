@@ -45,13 +45,14 @@ def process_images(images, max_length=5000, quality=80, prefix='r__', suffix='',
             continue
 
         if is_processed and not force:
-            print(f'Skipping: {base}')
+            if verbose:
+                print(f'Already processed. Skipping...')
             # make sure processed images are passed downstream
             yield save_path
             continue
 
         if verbose:
-            print(f'Processing: {base}')
+            print(f'Processing...')
 
         resize_image(f, save_path, max_length=max_length, quality=quality)
 
