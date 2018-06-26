@@ -45,11 +45,13 @@ def process_images(images, max_length=5000, quality=80, prefix='r__', suffix='',
             continue
 
         if is_processed and not force:
-            print(f'Skipping {base}')
+            print(f'Skipping: {base}')
+            # make sure processed images are passed downstream
+            yield save_path
             continue
 
         if verbose:
-            print(f'Processing {base}')
+            print(f'Processing: {base}')
 
         resize_image(f, save_path, max_length=max_length, quality=quality)
 
@@ -57,8 +59,7 @@ def process_images(images, max_length=5000, quality=80, prefix='r__', suffix='',
             newsize, oldsize, delta = get_sizes(new=save_path, old=f)
             percent = delta / oldsize * 100
             newsize, oldsize = newsize / 1e6, oldsize / 1e6
-            print(f'{oldsize:.2f}MB -> {newsize:.2f}MB ({percent:.1f}%)')
-            print('Done')
+            print(f'\tDone: {oldsize:.2f}MB -> {newsize:.2f}MB ({percent:.1f}%)')
 
         yield save_path
 
