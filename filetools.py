@@ -1,24 +1,17 @@
 from PIL import Image
-from glob import iglob
-from itertools import chain
+from glob import glob
 from zipfile import ZipFile
 from os import path
-from functools import partial
 
 
-def find_images(dir='./', conditions=None, recursive=True):
+def find_images(dir='./', callback: callable = None, recursive=True):
     image_extensions = ['jpg', 'png', 'jpeg']
-
-    if not conditions:
-        conditions = []
-
-    images = chain()
+    images = []
     for ext in image_extensions:
-        matches = iglob(f'{dir}/**/*.{ext}', recursive=recursive)
-        for condition in conditions:
-            images = chain(images, filter(condition, matches))
-        else:
-            images = chain(images, matches)
+        matches = glob(f'{dir}/**/*.{ext}', recursive=recursive)
+        if callback:
+            matches = [i for i in matches if callback(i)]
+        images += matches
     return images
 
 
@@ -29,7 +22,7 @@ def find_large_images(dir='./', max_megapixels=20, recursive=True):
             megapixels = w * h / 1e6
             return megapixels >= max_megapixels
 
-    return find_images(dir, conditions=[image_is_large], recursive=recursive)
+    return find_images(dir, callback=image_is_large, recursive=recursive)
 
 
 def modify_filename(file, prefix='', suffix=''):

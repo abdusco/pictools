@@ -33,6 +33,7 @@ def resize_image(file, save_path, max_length=0, width=0, height=0, quality=80):
 
 
 def process_images(images, max_length=5000, quality=80, prefix='r__', suffix='', verbose=False, force=False):
+    processed = []
     for f in images:
         base = path.basename(f)
         root, _ = path.splitext(base)
@@ -48,7 +49,7 @@ def process_images(images, max_length=5000, quality=80, prefix='r__', suffix='',
             if verbose:
                 print(f'Already processed. Skipping...')
             # make sure processed images are passed downstream
-            yield save_path
+            processed.append(save_path)
             continue
 
         if verbose:
@@ -62,7 +63,8 @@ def process_images(images, max_length=5000, quality=80, prefix='r__', suffix='',
             newsize, oldsize = newsize / 1e6, oldsize / 1e6
             print(f'\tDone: {oldsize:.2f}MB -> {newsize:.2f}MB ({percent:.1f}%)')
 
-        yield save_path
+        processed.append(save_path)
+    return processed
 
 
 def get_sizes(new, old):
