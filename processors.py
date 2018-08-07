@@ -60,7 +60,7 @@ def process_images(images, max_length=5000, quality=80, prefix='r__', suffix='',
 
         if was_processed and not force:
             if verbose:
-                print(f'[SKIP, ALREADY PROCESSED] {base}')
+                print(f'ALREADY PROCESSED: {base}')
             # make sure processed images are passed downstream
             processed.append(save_path)
             continue
@@ -72,16 +72,16 @@ def process_images(images, max_length=5000, quality=80, prefix='r__', suffix='',
             save_path = modify_filename(im, prefix=prefix, suffix=suffix)
             base = path.basename(im)
 
-            print(f'[PROCESSING {i + 1}/{total_due}] {base} ')
+            print(f'PROCESSING [{i + 1}/{total_due}]: {base} ')
             resize_image(im, save_path, max_length=max_length, quality=quality)
 
             if verbose:
                 size_before, size_after = path.getsize(im), path.getsize(save_path)
                 percent = (size_after - size_before) / size_before * 100
-                print(f'\t[DONE] {readable_size(size_before)} -> {readable_size(size_after)} ({percent:.1f}%)')
+                print(f'\tDONE: {readable_size(size_before)} -> {readable_size(size_after)} ({percent:.1f}%)')
 
             processed.append(save_path)
         except:
-            print(f'\t[SKIP, ERROR DURING PROCESSING] {base}')
+            print(f'\tERROR: Encountered error while processing')
             continue
     return processed
