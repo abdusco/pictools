@@ -39,3 +39,11 @@ def zip_files(files, zip_path, flat=False):
                 zf.write(file, arcname=path.basename(file))
             else:
                 zf.write(file)
+
+
+def readable_size(size, decimal_places=2):
+    for unit in ['', 'KB', 'MB', 'GB', 'TB']:
+        if size < 1024.0:
+            break
+        size /= 1024.0
+    return f"{size:.{decimal_places}f}{unit}"

@@ -1,74 +1,87 @@
 from PIL import Image
-from filetools import modify_filename
+from filetools import modify_filename, readable_size
 from os import path
+from operator import sub
+
+# suppress compression bomb warnings
+Image.MAX_IMAGE_PIXELS = 100 ** 6
 
 
-def resize_image(file, save_path, max_length=0, width=0, height=0, quality=80):
-    if not max_length and not width and not height:
-        raise AssertionError('At least one dimension must be specified')
+def _calculate_dimensions(size: tuple, max_length, max_width, max_height):
+    w, h = size
+    is_portrait = h >= w
+    by_max_length = max_length and max(w, h) > max_length
+    by_max_width = max_width and not (max_height or max_length) and w > max_width
+    by_max_height = max_height and not (max_width or max_length) and h > max_height
+
+    if by_max_length:
+        if is_portrait:
+            h, w = max_length, max_length / h * w
+        else:
+            w, h = max_length, max_length / w * h
+    elif by_max_width:
+        h = max_width / w * h
+    elif by_max_height:
+        w = max_height / h * w
+    else:
+        # doesn't need resizing
+        return w, h
+
+    return int(w), int(h)
+
+
+def resize_image(file, save_path, max_length=0, max_width=0, max_height=0, quality=80):
+    assert max_length or max_width or max_height, 'At least one dimension must be specified'
 
     with Image.open(file) as image:
-        w, h = image.size
-
-        is_portrait = h >= w
-        is_larger_than_max = max_length and max(w, h) > max_length
-        resize_by_width = width != 0 and height == 0 and not max_length
-        resize_by_height = height != 0 and width == 0 and not max_length
-
-        if is_larger_than_max:
-            if is_portrait:
-                height = max_length
-                width = height / h * w
-            else:
-                width = max_length
-                height = width / w * h
-        elif resize_by_width:
-            height = width * h / w
-        elif resize_by_height:
-            width = height * w / h
-
-        if width or height:
-            image = image.resize((int(width), int(height)), Image.LANCZOS)
+        dimensions = image.size
+        calculated = _calculate_dimensions(dimensions,
+                                           max_length=max_length,
+                                           max_width=max_width,
+                                           max_height=max_height)
+        if dimensions != calculated:
+            image = image.resize(calculated, Image.LANCZOS)
         image.save(save_path, quality=quality, mode='JPEG')
 
 
-def process_images(images, max_length=5000, quality=80, prefix='r__', suffix='', verbose=False, force=False):
+def process_images(images, max_length=5000, quality=80, prefix='r__', suffix='', verbose=True, force=False):
     processed = []
-    for f in images:
-        base = path.basename(f)
+    due = []
+    for im in images:
+        base = path.basename(im)
         root, _ = path.splitext(base)
-        save_path = modify_filename(f, prefix=prefix, suffix=suffix)
+        save_path = modify_filename(im, prefix=prefix, suffix=suffix)
 
-        is_processed_image = (bool(prefix) and root.startswith(prefix)) or (bool(suffix) and root.endswith(suffix))
-        is_processed = path.exists(save_path)
+        is_processed_image = (prefix and root.startswith(prefix)) or (suffix and root.endswith(suffix))
+        was_processed = path.exists(save_path)
 
         if is_processed_image:
             continue
 
-        if is_processed and not force:
+        if was_processed and not force:
             if verbose:
-                print(f'Already processed. Skipping...')
+                print(f'[SKIP, ALREADY PROCESSED] {base}')
             # make sure processed images are passed downstream
             processed.append(save_path)
             continue
+        due.append(im)
 
-        if verbose:
-            print(f'Processing...')
+    total_due = len(due)
+    for i, im in enumerate(due):
+        try:
+            save_path = modify_filename(im, prefix=prefix, suffix=suffix)
+            base = path.basename(im)
 
-        resize_image(f, save_path, max_length=max_length, quality=quality)
+            print(f'[PROCESSING {i + 1}/{total_due}] {base} ')
+            resize_image(im, save_path, max_length=max_length, quality=quality)
 
-        if verbose:
-            newsize, oldsize, delta = get_sizes(new=save_path, old=f)
-            percent = delta / oldsize * 100
-            newsize, oldsize = newsize / 1e6, oldsize / 1e6
-            print(f'\tDone: {oldsize:.2f}MB -> {newsize:.2f}MB ({percent:.1f}%)')
+            if verbose:
+                size_before, size_after = path.getsize(im), path.getsize(save_path)
+                percent = (size_after - size_before) / size_before * 100
+                print(f'\t[DONE] {readable_size(size_before)} -> {readable_size(size_after)} ({percent:.1f}%)')
 
-        processed.append(save_path)
+            processed.append(save_path)
+        except:
+            print(f'\t[SKIP, ERROR DURING PROCESSING] {base}')
+            continue
     return processed
-
-
-def get_sizes(new, old):
-    newsize = path.getsize(new)
-    oldsize = path.getsize(old)
-    delta = newsize - oldsize
-    return newsize, oldsize, delta
