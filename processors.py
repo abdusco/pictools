@@ -23,9 +23,6 @@ def _calculate_dimensions(size: tuple, max_length, max_width, max_height):
         h = max_width / w * h
     elif by_max_height:
         w = max_height / h * w
-    else:
-        # doesn't need resizing
-        return w, h
 
     return int(w), int(h)
 
