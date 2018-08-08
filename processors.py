@@ -81,7 +81,7 @@ def process_images(images, max_length=5000, quality=80, prefix='r__', suffix='',
                 print(f'\tDONE: {readable_size(size_before)} -> {readable_size(size_after)} ({percent:.1f}%)')
 
             processed.append(save_path)
-        except:
+        except (IOError, ValueError):
             print(f'\tERROR: Encountered error while processing')
             continue
     return processed
