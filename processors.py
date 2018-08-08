@@ -44,10 +44,10 @@ def resize_image(file, save_path, max_length=0, max_width=0, max_height=0, quali
 def process_images(images, max_length=5000, quality=80, prefix='r__', suffix='', verbose=True, force=False):
     processed = []
     due = []
-    for im in images:
-        base = path.basename(im)
+    for image_path in images:
+        base = path.basename(image_path)
         root, _ = path.splitext(base)
-        save_path = modify_filename(im, prefix=prefix, suffix=suffix)
+        save_path = modify_filename(image_path, prefix=prefix, suffix=suffix)
 
         is_processed_image = (prefix and root.startswith(prefix)) or (suffix and root.endswith(suffix))
         was_processed = path.exists(save_path)
@@ -61,24 +61,25 @@ def process_images(images, max_length=5000, quality=80, prefix='r__', suffix='',
             # make sure processed images are passed downstream
             processed.append(save_path)
             continue
-        due.append(im)
+        due.append(image_path)
 
     total_due = len(due)
-    for i, im in enumerate(due):
+    for i, image_path in enumerate(due):
+        save_path = modify_filename(image_path, prefix=prefix, suffix=suffix)
+        base = path.basename(image_path)
+
+        print(f'PROCESSING [{i + 1}/{total_due}]: {base} ')
+
         try:
-            save_path = modify_filename(im, prefix=prefix, suffix=suffix)
-            base = path.basename(im)
-
-            print(f'PROCESSING [{i + 1}/{total_due}]: {base} ')
-            resize_image(im, save_path, max_length=max_length, quality=quality)
-
-            if verbose:
-                size_before, size_after = path.getsize(im), path.getsize(save_path)
-                percent = (size_after - size_before) / size_before * 100
-                print(f'\tDONE: {readable_size(size_before)} -> {readable_size(size_after)} ({percent:.1f}%)')
-
-            processed.append(save_path)
+            resize_image(image_path, save_path, max_length=max_length, quality=quality)
         except (IOError, ValueError):
             print(f'\tERROR: Encountered error while processing')
             continue
+
+        if verbose:
+            size_before, size_after = path.getsize(image_path), path.getsize(save_path)
+            percent = (size_after - size_before) / size_before * 100
+            print(f'\tDONE: {readable_size(size_before)} -> {readable_size(size_after)} ({percent:.1f}%)')
+
+        processed.append(save_path)
     return processed
