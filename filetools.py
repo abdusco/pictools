@@ -1,7 +1,22 @@
 from PIL import Image
 from glob import glob
 from zipfile import ZipFile
-from os import path
+from os import path, scandir
+import re
+
+
+def find_dirs_by_regex(parent: str, pattern: str):
+    reg = re.compile(pattern=pattern, flags=re.IGNORECASE)
+    dirs = []
+    with scandir(parent) as it:
+        for entry in it:
+            if entry.is_file():
+                continue
+            base = path.basename(entry.path)
+            if not reg.search(base):
+                continue
+            dirs.append(entry.path)
+    return dirs
 
 
 def find_images(dir='./', callback: callable = None, recursive=True):
