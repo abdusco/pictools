@@ -1,5 +1,5 @@
 from PIL import Image
-from filetools import modify_filename, readable_size
+from .filetools import modify_filename, readable_size
 from os import path
 from operator import sub
 

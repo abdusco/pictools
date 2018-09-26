@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 import click
-from filetools import *
-from processors import *
-from separators import *
+from .filetools import *
+from .processors import *
+from .separators import *
 
 
 @click.group(chain=True)
@@ -83,6 +83,35 @@ def process(context, dirs, max_length, quality, force, zip, prefix, suffix, patt
                       zip_path=zip_path,
                       flat=True)
             click.echo(f'Saved zip file to {zip_path}')
+
+
+@cli.command('rename', help='Rename images in folders')
+@click.argument('dirs', nargs=-1)
+@click.option('--pattern', is_flag=True, help='Search by regex')
+@click.pass_context
+def rename(context, dirs, pattern):
+    matches = []
+    for item in dirs:
+        if pattern:
+            matches += find_dirs_by_regex(parent='.', pattern=item)
+        else:
+            if not path.exists(item):
+                continue
+            matches += [path.abspath(item)]
+
+    if not matches:
+        click.echo('Nothing matched')
+        raise click.Abort
+
+    click.echo(f'Matched dirs: {len(matches)}')
+    for item in matches:
+        click.echo(f'\t{item}')
+
+    if not click.confirm('Proceed?'):
+        raise click.Abort
+
+    for d in matches:
+        numerate_images_in_dir(d)
 
 
 if __name__ == '__main__':

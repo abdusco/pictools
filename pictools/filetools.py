@@ -1,7 +1,7 @@
 from PIL import Image
 from glob import glob
 from zipfile import ZipFile
-from os import path, scandir
+from os import path, scandir, rename
 import re
 
 
@@ -45,6 +45,17 @@ def modify_filename(file, prefix='', suffix=''):
     root, ext = path.splitext(path.basename(file))
     base = ''.join([prefix, root, suffix, ext])
     return path.join(dir, base)
+
+
+def numerate_images_in_dir(dir: str):
+    images = sorted(find_images(dir))
+    dir_name = path.basename(dir)
+    for i, image in enumerate(images):
+        dir = path.dirname(image)
+        root, ext = path.splitext(path.basename(image))
+        base = ''.join([dir_name, f'__{i + 1:03d}', ext])
+        target_name = path.join(dir, base)
+        rename(image, target_name)
 
 
 def zip_files(files, zip_path, flat=False):
