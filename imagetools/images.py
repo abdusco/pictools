@@ -19,11 +19,11 @@ def process_dir(source_dir: Path, target_dir: Path, max_length: int, quality: in
     processed = []
     total = len(images)
     for i, img in enumerate(images):
-        logger.info(f'Processing {i:3d}/{total}: {img}')
+        logger.debug(f'Processing {i:3d}/{total}: {img}')
 
         save_path: Path = target_dir / f'{img.stem}_max{max_length}q{quality}{img.suffix}'
         if not force and save_path.exists():
-            logger.info(f'Done: {img}')
+            logger.debug(f'Done: {img}')
             continue
 
         with Image.open(img) as image:
@@ -40,6 +40,6 @@ def process_dir(source_dir: Path, target_dir: Path, max_length: int, quality: in
         before_bytes, after_bytes = [f.stat().st_size for f in [img, save_path]]
         before_size, after_size = [fs.readable_size(s) for s in [before_bytes, after_bytes]]
         change_percent = (after_bytes - before_bytes) / before_bytes * 100
-        logger.success(f'Done: {before_size} -> {after_size} ({change_percent:.0f}%)')
+        logger.debug(f'Done: {before_size} -> {after_size} ({change_percent:.0f}%)')
 
     return processed

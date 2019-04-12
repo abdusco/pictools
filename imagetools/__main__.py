@@ -64,7 +64,7 @@ def main() -> None:
         if compressed:
             zip_path = workdir / f'{d.stem}.zip'
             fs.zip(compressed, zip_path)
-            logger.success(f'Saved zip at {zip_path}')
+            logger.success(f'Done: {d}. Saved zip at {zip_path}')
 
 
 if __name__ == '__main__':
