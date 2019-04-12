@@ -15,6 +15,7 @@ def get_args() -> tuple:
     parser.add_argument('--glob', '-g', action='store_true', help='Search dirs by glob')
     parser.add_argument('--regex', '-r', action='store_true', help='Search dirs by regex')
     parser.add_argument('--force', '-f', action='store_true', help='Force process images')
+    parser.add_argument('--delete', action='store_true', help='Delete completed')
     parser.add_argument('-y', dest='skip_confirmation', action='store_true', help='Skip confirmation')
     parser.add_argument('dirs', nargs='+')
     args = parser.parse_args()
@@ -65,6 +66,14 @@ def main() -> None:
             zip_path = workdir / f'{d.stem}.zip'
             fs.zip(compressed, zip_path)
             logger.success(f'Done: {d}. Saved zip at {zip_path}')
+
+    if args.delete:
+        print('All completed. Delete?')
+        for d in dirs:
+            print(d)
+        if 'y' != input('Delete? y/n?').strip().lower():
+            for d in dirs:
+                d.unlink()
 
 
 if __name__ == '__main__':
