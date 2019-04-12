@@ -18,7 +18,7 @@ def find_dirs_by_glob(parent_dir: Path, glob: str) -> typing.List[Path]:
             if item.is_dir()]
 
 
-def find_images(parent_dir: Path, criteria: callable = None) -> typing.List[Path]:
+def find_images(parent_dir: Path, criteria: callable = None, sort=True) -> typing.List[Path]:
     images = []
     extensions = ['.jpg', '.jpeg']
     for item in parent_dir.glob('**/*'):
@@ -27,6 +27,8 @@ def find_images(parent_dir: Path, criteria: callable = None) -> typing.List[Path
         if criteria and not criteria(item):
             continue
         images.append(item)
+    if sort:
+        images = sorted(images)
     return images
 
 
