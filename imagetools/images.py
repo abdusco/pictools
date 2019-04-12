@@ -38,7 +38,7 @@ def process_dir(source_dir: Path, target_dir: Path, max_length: int, quality: in
 
         before_bytes, after_bytes = [f.stat().st_size for f in [img, save_path]]
         before_size, after_size = [fs.readable_size(s) for s in [before_bytes, after_bytes]]
-        change_percent = (before_bytes - after_bytes) / before_bytes * 100
+        change_percent = (after_bytes - before_bytes) / before_bytes * 100
         logger.success(f'Done: {before_size} -> {after_size} ({change_percent:.0f}%)')
 
     return processed
