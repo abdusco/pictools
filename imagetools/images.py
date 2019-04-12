@@ -17,8 +17,9 @@ def process_dir(source_dir: Path, target_dir: Path, max_length: int, quality: in
         return []
 
     processed = []
-    for img in images:
-        logger.info(f'Processing: {img.name}')
+    total = len(images)
+    for i, img in enumerate(images):
+        logger.info(f'Processing {i:3d}/{total}: {img}')
 
         save_path: Path = target_dir / f'{img.stem}_max{max_length}q{quality}{img.suffix}'
         if not force and save_path.exists():
