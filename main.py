@@ -1,3 +1,4 @@
+import itertools
 import time
 import shutil
 import typing
@@ -6,6 +7,7 @@ from functools import partial
 from pathlib import Path
 
 import click
+import loguru
 
 from fs import find_dirs, readable_size
 from images import resize_image
@@ -68,12 +70,14 @@ def pipeline(processors,
 @click.option('-f', '--force',
               is_flag=True)
 def compress_images(quality: int, max_length: int, target: str, force: bool):
+    @loguru.logger.catch()
     def compressor(dirs: typing.Iterator[Path]):
         for d in dirs:
             save_dir: Path = Path(target) / d.name
             save_dir.mkdir(exist_ok=True, parents=True)
             print(click.style(f'Processing: {d}', fg='yellow'))
-            with click.progressbar(list(d.iterdir())) as bar:
+            files = itertools.chain(*(d.glob(f'**/*.{ext}') for ext in ['jpg', 'jpeg']))
+            with click.progressbar(list(files)) as bar:
                 def update_bar(before: Path, after: Path):
                     before_bytes, after_bytes = [f.stat().st_size for f in [before, after]]
                     before_size, after_size = [readable_size(s) for s in [before_bytes, after_bytes]]
