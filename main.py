@@ -52,8 +52,8 @@ def pipeline(processors,
 
     for processor in processors:
         dirs = processor(dirs)
-    for d in dirs:
-        print(click.style(f'Finished: {d.name}', fg='green'))
+    for _ in dirs:
+        pass
 
 
 @cli.command('compress',
@@ -148,6 +148,19 @@ def flatten(separator: str):
             yield d
 
     return flattener
+
+
+@cli.command('delete', help='Delete directories')
+def delete():
+    def deleter(dirs: typing.Iterator[Path]):
+        with click.progressbar(dirs) as bar:
+            for d in bar:
+                bar.label = f'Deleting: {d.name}'
+                time.sleep(1)
+                shutil.rmtree(d, ignore_errors=True)
+                yield d
+
+    return deleter
 
 
 if __name__ == '__main__':
