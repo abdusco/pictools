@@ -75,7 +75,7 @@ def resize_images(quality: int, max_length: int, target: str, force: bool):
             save_dir: Path = Path(target) / d.name
             save_dir.mkdir(exist_ok=True, parents=True)
             print(click.style(f'Processing: {d}', fg='yellow'))
-            with click.progressbar(fs.find_images(d)) as bar:
+            with click.progressbar(fs.find_images(d), width=20) as bar:
                 def update_bar(before: Path, after: Path):
                     before_bytes, after_bytes = [f.stat().st_size for f in [before, after]]
                     before_size, after_size = [fs.readable_size(s) for s in [before_bytes, after_bytes]]
@@ -114,7 +114,7 @@ def zip_files(target: str):
         for d in dirs:
             save_path: Path = target_dir / f'{d.name}.zip'
             print(click.style(f'Zipping: {d}', fg='magenta'))
-            with zipfile.ZipFile(save_path, 'w') as z, click.progressbar(list(d.iterdir())) as bar:
+            with zipfile.ZipFile(save_path, 'w') as z, click.progressbar(list(d.iterdir()), width=20) as bar:
                 for f in bar:
                     bar.label = f.name
                     z.write(f, arcname=f.name)
@@ -133,7 +133,7 @@ def flatten(separator: str):
     def flattener(dirs: typing.Iterator[Path]):
         for d in dirs:
             print(click.style(f'Flattening {d}', fg='red'))
-            with click.progressbar(list(d.glob('**/*'))) as bar:
+            with click.progressbar(list(d.glob('**/*')), width=20) as bar:
                 for f in bar:
                     if f.is_dir():
                         continue
@@ -151,7 +151,7 @@ def flatten(separator: str):
 @cli.command('delete', help='Delete directories')
 def delete():
     def deleter(dirs: typing.Iterator[Path]):
-        with click.progressbar(dirs) as bar:
+        with click.progressbar(dirs, width=20) as bar:
             for d in bar:
                 bar.label = f'Deleting: {d.name}'
                 time.sleep(1)
