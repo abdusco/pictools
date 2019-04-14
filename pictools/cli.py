@@ -1,4 +1,3 @@
-import itertools
 import time
 import shutil
 import typing
@@ -9,8 +8,8 @@ from pathlib import Path
 import click
 import loguru
 
-from fs import find_dirs, readable_size
-from images import resize_image
+from pictools import fs
+from pictools import images
 
 
 @click.group(name='pictools',
@@ -38,7 +37,7 @@ def pipeline(processors,
              globs: typing.Tuple[str],
              patterns: typing.Tuple[str],
              yes: bool):
-    dirs = find_dirs(dirs=dirs, globs=globs, patterns=patterns)
+    dirs = fs.find_dirs(dirs=dirs, globs=globs, patterns=patterns)
     if not dirs:
         print('No matches')
         raise click.Abort
@@ -76,11 +75,10 @@ def compress_images(quality: int, max_length: int, target: str, force: bool):
             save_dir: Path = Path(target) / d.name
             save_dir.mkdir(exist_ok=True, parents=True)
             print(click.style(f'Processing: {d}', fg='yellow'))
-            files = itertools.chain(*(d.glob(f'**/*.{ext}') for ext in ['jpg', 'jpeg']))
-            with click.progressbar(list(files)) as bar:
+            with click.progressbar(fs.find_images(d)) as bar:
                 def update_bar(before: Path, after: Path):
                     before_bytes, after_bytes = [f.stat().st_size for f in [before, after]]
-                    before_size, after_size = [readable_size(s) for s in [before_bytes, after_bytes]]
+                    before_size, after_size = [fs.readable_size(s) for s in [before_bytes, after_bytes]]
                     change_percent = (after_bytes - before_bytes) / before_bytes * 100
 
                     name = click.style(before.name, fg="yellow")
@@ -94,11 +92,11 @@ def compress_images(quality: int, max_length: int, target: str, force: bool):
                     update_bar(f, save_path)
                     continue
 
-                resize_image(source=f,
-                             target=save_path,
-                             quality=quality,
-                             max_length=max_length,
-                             callback=partial(update_bar, f, save_path))
+                images.resize_image(source=f,
+                                    target=save_path,
+                                    quality=quality,
+                                    max_length=max_length,
+                                    callback=partial(update_bar, f, save_path))
             yield save_dir
 
     return compressor
