@@ -55,7 +55,7 @@ def pipeline(processors,
         pass
 
 
-@cli.command('compress',
+@cli.command('resize',
              help='Process and compress images')
 @click.option('-q', '--quality',
               default=75,
@@ -68,7 +68,7 @@ def pipeline(processors,
               help='Location to save zip files')
 @click.option('-f', '--force',
               is_flag=True)
-def compress_images(quality: int, max_length: int, target: str, force: bool):
+def resize_images(quality: int, max_length: int, target: str, force: bool):
     @loguru.logger.catch()
     def compressor(dirs: typing.Iterator[Path]):
         for d in dirs:
