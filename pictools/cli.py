@@ -11,6 +11,10 @@ import loguru
 from pictools import fs
 from pictools import images
 
+progressbar = partial(click.progressbar,
+                      item_show_func=lambda item: item.stem if item else '',
+                      width=20)
+
 
 @click.group(name='pictools',
              chain=True)
@@ -70,36 +74,22 @@ def pipeline(processors,
               is_flag=True)
 def resize_images(quality: int, max_length: int, target: str, force: bool):
     @loguru.logger.catch()
-    def compressor(dirs: typing.Iterator[Path]):
+    def resizer(dirs: typing.Iterator[Path]):
         for d in dirs:
             save_dir: Path = Path(target) / d.name
             save_dir.mkdir(exist_ok=True, parents=True)
-            print(click.style(f'Processing: {d}', fg='yellow'))
-            with click.progressbar(fs.find_images(d), width=20) as bar:
-                def update_bar(before: Path, after: Path):
-                    before_bytes, after_bytes = [f.stat().st_size for f in [before, after]]
-                    before_size, after_size = [fs.readable_size(s) for s in [before_bytes, after_bytes]]
-                    change_percent = (after_bytes - before_bytes) / before_bytes * 100
-
-                    name = click.style(before.name, fg="yellow")
-                    report = f'{before_size} -> {after_size} [{change_percent:.0f}%]'
-                    bar.label = f'{name}: {report}'
-
-            for f in bar:
-                save_path: Path = save_dir / f.name
-                if not force and save_path.exists():
-                    time.sleep(0.1)
-                    update_bar(f, save_path)
-                    continue
-
-                images.resize_image(source=f,
-                                    target=save_path,
-                                    quality=quality,
-                                    max_length=max_length,
-                                    callback=partial(update_bar, f, save_path))
+            with progressbar(fs.find_images(d), label='Resizing') as bar:
+                for f in bar:
+                    save_path: Path = save_dir / f.name
+                    if not force and save_path.exists():
+                        continue
+                    images.resize_image(source=f,
+                                        target=save_path,
+                                        quality=quality,
+                                        max_length=max_length)
             yield save_dir
 
-    return compressor
+    return resizer
 
 
 @cli.command('zip',
@@ -113,12 +103,9 @@ def zip_files(target: str):
         target_dir.mkdir(exist_ok=True)
         for d in dirs:
             save_path: Path = target_dir / f'{d.name}.zip'
-            print(click.style(f'Zipping: {d}', fg='magenta'))
-            with zipfile.ZipFile(save_path, 'w') as z, click.progressbar(list(d.iterdir()), width=20) as bar:
+            with zipfile.ZipFile(save_path, 'w') as z, progressbar(list(d.iterdir()), label='Zipping') as bar:
                 for f in bar:
-                    bar.label = f.name
                     z.write(f, arcname=f.name)
-                    time.sleep(0.1)
             yield d
 
     return zipper
@@ -132,14 +119,12 @@ def zip_files(target: str):
 def flatten(separator: str):
     def flattener(dirs: typing.Iterator[Path]):
         for d in dirs:
-            print(click.style(f'Flattening {d}', fg='red'))
-            with click.progressbar(list(d.glob('**/*')), width=20) as bar:
+            with progressbar(list(d.glob('**/*')), label='Flattening') as bar:
                 for f in bar:
                     if f.is_dir():
                         continue
                     flattened = str(f.relative_to(d)).replace('/', separator)
                     f.rename(d / flattened)
-                    bar.label = f.name
                 for d in d.glob('**/*/'):
                     if d.is_dir():
                         shutil.rmtree(d)
@@ -151,9 +136,8 @@ def flatten(separator: str):
 @cli.command('delete', help='Delete directories')
 def delete():
     def deleter(dirs: typing.Iterator[Path]):
-        with click.progressbar(dirs, width=20) as bar:
+        with progressbar(dirs, label='Deleting') as bar:
             for d in bar:
-                bar.label = f'Deleting: {d.name}'
                 time.sleep(1)
                 shutil.rmtree(d, ignore_errors=True)
                 yield d
