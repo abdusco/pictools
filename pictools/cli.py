@@ -55,8 +55,8 @@ def pipeline(processors,
 
     for processor in processors:
         dirs = processor(dirs)
-    for _ in dirs:
-        pass
+    for d in dirs:
+        print(f'Done: {d}')
 
 
 @cli.command('resize',
