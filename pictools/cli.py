@@ -2,6 +2,8 @@ import time
 import shutil
 import typing
 import zipfile
+from collections import namedtuple
+from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 
@@ -10,6 +12,13 @@ import loguru
 
 from pictools import fs
 from pictools import images
+
+
+@dataclass
+class Job:
+    original_dir: Path
+    processed_dir: Path = None
+
 
 progressbar = partial(click.progressbar,
                       item_show_func=lambda item: item.stem if item else '',
@@ -52,7 +61,7 @@ def pipeline(processors,
 
     if not yes and not click.confirm('Continue?', abort=True):
         pass
-
+    dirs = [Job(original_dir=d) for d in dirs]
     for processor in processors:
         dirs = processor(dirs)
     for d in dirs:
@@ -74,11 +83,11 @@ def pipeline(processors,
               is_flag=True)
 def resize_images(quality: int, max_length: int, target: str, force: bool):
     @loguru.logger.catch()
-    def resizer(dirs: typing.Iterator[Path]):
-        for d in dirs:
-            save_dir: Path = Path(target) / d.name
+    def resizer(jobs: typing.Iterator[Job]):
+        for j in jobs:
+            save_dir: Path = Path(target) / j.original_dir.name
             save_dir.mkdir(exist_ok=True, parents=True)
-            with progressbar(fs.find_images(d), label='Resizing') as bar:
+            with progressbar(fs.find_images(j.original_dir), label='Resizing') as bar:
                 for f in bar:
                     save_path: Path = save_dir / f.name
                     if not force and save_path.exists():
@@ -87,7 +96,8 @@ def resize_images(quality: int, max_length: int, target: str, force: bool):
                                         target=save_path,
                                         quality=quality,
                                         max_length=max_length)
-            yield save_dir
+            j.processed_dir = save_dir
+            yield j
 
     return resizer
 
@@ -98,15 +108,17 @@ def resize_images(quality: int, max_length: int, target: str, force: bool):
               default='_pictools',
               help='Location to save zip files')
 def zip_files(target: str):
-    def zipper(dirs: typing.Iterator[Path]):
+    def zipper(jobs: typing.Iterator[Job]):
         target_dir = Path(target)
         target_dir.mkdir(exist_ok=True)
-        for d in dirs:
-            save_path: Path = target_dir / f'{d.name}.zip'
-            with zipfile.ZipFile(save_path, 'w') as z, progressbar(list(d.iterdir()), label='Zipping') as bar:
+        for j in jobs:
+            save_path: Path = target_dir / f'{j.processed_dir.name}.zip'
+            with zipfile.ZipFile(save_path, 'w') as z, progressbar(list(j.processed_dir.iterdir()),
+                                                                   label='Zipping') as bar:
                 for f in bar:
                     z.write(f, arcname=f.name)
-            yield d
+            j.processed_dir
+            yield j
 
     return zipper
 
